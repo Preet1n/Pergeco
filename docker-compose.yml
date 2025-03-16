@@ -1,0 +1,55 @@
+services:
+  frontend_angular:
+    build:
+      context: ./frontend_angular
+    tty: true
+    networks:
+      - pergeco_network
+
+  backend_laravel:
+    build:
+      context: ./backend_laravel
+    restart: unless-stopped
+    environment:
+      - APP_ENV=local
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=pergeco
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+    depends_on:
+      - mysql
+    networks:
+      - pergeco_network
+
+  mysql:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=pergeco
+    networks:
+      - pergeco_network
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+  
+  nginx:
+    build:
+      context: ./docker_configs/nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend_angular
+      - backend_laravel
+    networks:
+      - pergeco_network
+
+volumes:
+  mysql_data:
+
+networks:
+  pergeco_network:
+    driver: bridge
